@@ -1,0 +1,29 @@
+{
+  "name": "hiero-account-notifications",
+  "version": "0.1.0",
+  "description": "Watch Hedera accounts and deliver a provenance-stamped receipt when they transact — the app tier over hiero-receipts. Prototype.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "keywords": ["hedera", "hiero", "notifications", "receipt", "mirror-node", "watcher"],
+  "bin": {
+    "hiero-notify": "./dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": ["dist", "docs", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "watch": "node dist/cli.js"
+  },
+  "dependencies": {
+    "hiero-receipts": "file:../hiero-receipts",
+    "@hiero-enterprise/mirror": "file:../hiero-enterprise-js/packages/mirror"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^4.0.0"
+  }
+}

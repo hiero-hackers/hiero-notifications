@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+
+# secrets — never commit
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# example output
+*.jsonl
+
+# your real config (may hold webhook URLs)
+notify.config.json
