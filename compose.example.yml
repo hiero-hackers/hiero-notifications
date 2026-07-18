@@ -1,0 +1,15 @@
+# docker compose -f compose.example.yml up -d
+# Copy notify.config.example.json to notify.config.json first (it is
+# gitignored — real configs may hold webhook URLs) and point its `state` and
+# `deadLetter` at /data so they land on the volume.
+services:
+  hiero-notify:
+    image: ghcr.io/hiero-hackers/hiero-notifications:0.1.0
+    restart: unless-stopped
+    command: ["--config", "/config/notify.config.json"]
+    volumes:
+      - ./notify.config.json:/config/notify.config.json:ro
+      - notify-data:/data
+
+volumes:
+  notify-data:

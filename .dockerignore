@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+docs-api
+.git
+.github
+docs
+examples
+test
+*.md
+*.jsonl
+.env*
+notify.config.json

@@ -1,5 +1,5 @@
 /**
- * Programmatic usage — how you'd extend the watcher in your own app, with a
+ * Programmatic usage — how you'd extend the built-in account watcher with a
  * CUSTOM condition and a CUSTOM delivery alongside the built-ins.
  *
  *   node examples/custom-watch.ts [account]     (default 0.0.98)
@@ -8,22 +8,31 @@
  * built (`npm install && npm run build`).
  */
 import { appendFileSync } from "node:fs";
-import { pollOnce, mirrorSource, consoleDelivery, anyOf, anyBalanceChange } from "../dist/index.js";
-import type { Condition, Delivery } from "../dist/index.js";
+import {
+  pollOnce,
+  accountWatcher,
+  consoleDelivery,
+  anyOf,
+  anyBalanceChange,
+} from "@hiero-hackers/hiero-notifications";
+import type { Condition, Delivery, Receipt } from "@hiero-hackers/hiero-notifications";
 
-// ── A custom CONDITION: notify on any NFT sent or received. ──
-const nftActivity: Condition = {
+// ── A custom CONDITION over the receipt payload: notify on any NFT moved. ──
+const nftActivity: Condition<Receipt> = {
   name: "nft-activity",
   matches: (receipt) => (receipt.nft?.length ?? 0) > 0,
 };
 
-// ── A custom DELIVERY: append each receipt to a JSONL file (bigints as
-//    strings, so nothing is lost). This is all a "delivery" is. ──
+// ── A custom DELIVERY: append each notification to a JSONL file (bigints as
+//    strings, so nothing is lost). This is all a "delivery" is — the same
+//    shape serves email, Telegram, SMS, anything: do the I/O in deliver(),
+//    and THROW on failure (e.g. a non-2xx API response) so the watch loop's
+//    retry + dead-letter machinery handles it like any built-in channel. ──
 const toFile: Delivery = {
   name: "file(receipts.jsonl)",
-  async deliver(event) {
+  async deliver(n) {
     const line = JSON.stringify(
-      { account: event.account, at: event.at, receipt: event.receipt },
+      { id: n.id, source: n.source, subject: n.subject, at: n.at, payload: n.payload },
       (_key, value) => (typeof value === "bigint" ? value.toString() : value),
     );
     appendFileSync("receipts.jsonl", line + "\n");
@@ -33,7 +42,7 @@ const toFile: Delivery = {
 const account = process.argv[2] ?? "0.0.98";
 
 const delivered = await pollOnce({
-  source: mirrorSource({ accounts: [account] }),
+  watcher: accountWatcher({ accounts: [account] }),
   // A built-in composed with the custom one: any balance change OR NFT activity.
   condition: anyOf(anyBalanceChange, nftActivity),
   deliveries: [consoleDelivery, toFile],

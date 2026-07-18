@@ -5,7 +5,13 @@
  */
 import { readFileSync } from "node:fs";
 import type { Condition, Delivery } from "./types.js";
-import { anyBalanceChange, anyOf, anyTransaction, inflowAtLeast, outflowAtLeast, stakingReward } from "./condition.js";
+import { anyActivity, anyOf } from "./condition.js";
+import {
+  anyBalanceChange,
+  inflowAtLeast,
+  outflowAtLeast,
+  stakingReward,
+} from "./watchers/account.js";
 import { consoleDelivery, webhookDelivery, slackDelivery, discordDelivery } from "./delivery.js";
 
 /** A notification trigger — what makes a transaction worth notifying about. */
@@ -32,6 +38,9 @@ export interface NotifyConfig {
   network?: string; // default "mainnet"
   pollIntervalSeconds?: number; // default 15
   backfill?: number; // default 1
+  state?: string; // cursor file path — set it and restarts catch up instead of re-baselining
+  deadLetter?: string; // append finally-failed deliveries here (one JSON line each) for replay
+  transactionType?: string; // restrict to one mirror type (default: all — receipts speak every type)
   triggers?: Trigger[]; // default [{ type: "balance-change" }]
   deliveries?: DeliveriesConfig; // default console only
 }
@@ -40,7 +49,9 @@ export interface NotifyConfig {
 
 /** The condition: each trigger becomes a `Condition`, combined with OR. */
 export function conditionFor(config: NotifyConfig): Condition {
-  const triggers = config.triggers?.length ? config.triggers : [{ type: "balance-change" } as const];
+  const triggers = config.triggers?.length
+    ? config.triggers
+    : [{ type: "balance-change" } as const];
   const conditions = triggers.map(triggerToCondition);
   return conditions.length === 1 ? conditions[0]! : anyOf(...conditions);
 }
@@ -66,7 +77,7 @@ export function pollIntervalMs(config: NotifyConfig): number {
 function triggerToCondition(trigger: Trigger): Condition {
   switch (trigger.type) {
     case "any":
-      return anyTransaction;
+      return anyActivity;
     case "balance-change":
       return anyBalanceChange;
     case "staking":
@@ -77,6 +88,20 @@ function triggerToCondition(trigger: Trigger): Condition {
       return outflowAtLeast(trigger.minHbar);
   }
 }
+
+const KNOWN_CONFIG_KEYS = new Set([
+  "accounts",
+  "network",
+  "pollIntervalSeconds",
+  "backfill",
+  "state",
+  "deadLetter",
+  "transactionType",
+  "triggers",
+  "deliveries",
+]);
+
+/** Split argv into accounts, valued flags (`--k v`), and boolean flags (`--k`). */
 
 /** A channel's URL, or `undefined` when absent or explicitly disabled. */
 function channelUrl(channel?: Channel): string | undefined {
@@ -90,11 +115,20 @@ function channelUrl(channel?: Channel): string | undefined {
 export function loadConfig(path: string): NotifyConfig {
   let raw: unknown;
   try {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- reading the user's own --config path is this function's purpose
     raw = JSON.parse(readFileSync(path, "utf8"));
   } catch (err) {
-    throw new Error(`could not read config ${path}: ${err instanceof Error ? err.message : err}`);
+    throw new Error(`could not read config ${path}: ${err instanceof Error ? err.message : err}`, {
+      cause: err,
+    });
   }
   const config = raw as NotifyConfig;
+  // A typo'd key silently falling back to a default is the config-file
+  // version of a mistyped flag — reject it with the exact names.
+  const unknown = Object.keys(config).filter((k) => !KNOWN_CONFIG_KEYS.has(k));
+  if (unknown.length > 0) {
+    throw new Error(`config ${path}: unknown key(s): ${unknown.join(", ")}`);
+  }
   if (!Array.isArray(config.accounts) || config.accounts.length === 0) {
     throw new Error(`config ${path}: "accounts" must be a non-empty array`);
   }
@@ -102,64 +136,3 @@ export function loadConfig(path: string): NotifyConfig {
 }
 
 // ── Building a config from CLI flags ─────────────────────────────────────
-
-export interface Args {
-  readonly accounts: string[];
-  flag(key: string): string | undefined;
-  bool(key: string): boolean;
-  num(key: string): number | undefined;
-}
-
-/** Split argv into accounts, valued flags (`--k v`), and boolean flags (`--k`). */
-export function parseArgs(argv: readonly string[]): Args {
-  const accounts: string[] = [];
-  const flags = new Map<string, string>();
-  const bools = new Set<string>();
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i]!;
-    if (!arg.startsWith("--")) {
-      accounts.push(arg);
-      continue;
-    }
-    const key = arg.slice(2);
-    const next = argv[i + 1];
-    if (next !== undefined && !next.startsWith("--")) {
-      flags.set(key, next);
-      i += 1;
-    } else {
-      bools.add(key);
-    }
-  }
-  return {
-    accounts,
-    flag: (key) => flags.get(key),
-    bool: (key) => bools.has(key),
-    num: (key) => (flags.has(key) ? Number(flags.get(key)) : undefined),
-  };
-}
-
-export function argsToConfig(args: Args): NotifyConfig {
-  const triggers: Trigger[] = [];
-  if (args.bool("staking")) triggers.push({ type: "staking" });
-  const inflow = args.num("min-inflow");
-  if (inflow !== undefined) triggers.push({ type: "inflow", minHbar: inflow });
-  const outflow = args.num("min-outflow");
-  if (outflow !== undefined) triggers.push({ type: "outflow", minHbar: outflow });
-
-  const deliveries: DeliveriesConfig = {};
-  const webhook = args.flag("webhook");
-  if (webhook) deliveries.webhook = webhook;
-  const slack = args.flag("slack");
-  if (slack) deliveries.slack = slack;
-  const discord = args.flag("discord");
-  if (discord) deliveries.discord = discord;
-
-  return {
-    accounts: args.accounts,
-    ...(args.flag("network") ? { network: args.flag("network")! } : {}),
-    ...(args.num("interval") !== undefined ? { pollIntervalSeconds: args.num("interval")! } : {}),
-    ...(args.num("backfill") !== undefined ? { backfill: args.num("backfill")! } : {}),
-    ...(triggers.length > 0 ? { triggers } : {}),
-    deliveries,
-  };
-}

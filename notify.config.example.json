@@ -2,15 +2,28 @@
   "network": "mainnet",
   "pollIntervalSeconds": 15,
   "backfill": 1,
+  "state": ".hiero-notify.state.json",
+  "deadLetter": ".hiero-notify.dead-letter.jsonl",
   "accounts": ["0.0.1234", "0.0.5678"],
   "triggers": [
-    { "type": "inflow", "minHbar": 100 },
-    { "type": "staking" }
+    {
+      "type": "inflow",
+      "minHbar": 100
+    },
+    {
+      "type": "staking"
+    }
   ],
   "deliveries": {
     "console": true,
-    "slack": { "enabled": true, "url": "https://hooks.slack.com/services/REPLACE/ME" },
-    "discord": { "enabled": false, "url": "https://discord.com/api/webhooks/REPLACE/ME" },
+    "slack": {
+      "enabled": true,
+      "url": "https://hooks.slack.com/services/REPLACE/ME"
+    },
+    "discord": {
+      "enabled": false,
+      "url": "https://discord.com/api/webhooks/REPLACE/ME"
+    },
     "webhook": "https://example.com/hook"
   }
 }

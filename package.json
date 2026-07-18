@@ -1,29 +1,85 @@
 {
-  "name": "hiero-account-notifications",
+  "name": "@hiero-hackers/hiero-notifications",
   "version": "0.1.0",
-  "description": "Watch Hedera accounts and deliver a provenance-stamped receipt when they transact — the app tier over hiero-receipts. Prototype.",
+  "description": "Watch Hedera activity and deliver a notification when it matters \u2014 the built-in watcher delivers a provenance-stamped receipt when a tracked account transacts. Prototype.",
   "type": "module",
   "license": "Apache-2.0",
-  "keywords": ["hedera", "hiero", "notifications", "receipt", "mirror-node", "watcher"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiero-hackers/hiero-notifications.git"
+  },
+  "bugs": "https://github.com/hiero-hackers/hiero-notifications/issues",
+  "homepage": "https://github.com/hiero-hackers/hiero-notifications#readme",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "keywords": [
+    "hedera",
+    "hiero",
+    "notifications",
+    "receipt",
+    "mirror-node",
+    "watcher",
+    "alerts"
+  ],
   "bin": {
     "hiero-notify": "./dist/cli.js"
   },
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   },
-  "files": ["dist", "docs", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:examples": "tsc -p tsconfig.examples.json",
     "test": "vitest run",
-    "watch": "node dist/cli.js"
+    "test:coverage": "vitest run --coverage",
+    "test:pack": "node scripts/pack-smoke.mjs",
+    "test:live": "vitest run -c vitest.live.config.ts",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
+    "format": "prettier --write src test examples *.md",
+    "format:check": "prettier --check src test examples *.md",
+    "lint:package": "publint && attw --pack --profile esm-only .",
+    "docs": "typedoc",
+    "prepare": "npm run build",
+    "watch": "node dist/cli.js",
+    "example:roundtrip": "node --env-file-if-exists=.env examples/testnet-roundtrip.ts"
   },
   "dependencies": {
-    "hiero-receipts": "file:../hiero-receipts",
-    "@hiero-enterprise/mirror": "file:../hiero-enterprise-js/packages/mirror"
+    "@hiero-hackers/enterprise-mirror": "^0.1.0",
+    "@hiero-hackers/hiero-receipts": "^0.1.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@eslint/js": "^10.0.1",
+    "@hiero-hackers/enterprise-core": "^0.1.0",
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-security": "^4.0.1",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "publint": "^0.3.21",
+    "typedoc": "^0.28.20",
     "typescript": "^5.5.0",
+    "typescript-eslint": "^8.64.0",
     "vitest": "^4.0.0"
   }
 }

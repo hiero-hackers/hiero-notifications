@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  // Despite the name, this also typechecks test/ — it is the ONLY tsc pass
+  // the tests get (the main tsconfig covers src only), and it has caught
+  // real fixture drift. If you add a test, it is checked here.
+  "include": ["examples/**/*.ts", "test/**/*.ts"],
+  // testnet-roundtrip needs the unpublished hiero-payment-requests sibling —
+  // the one example that cannot typecheck from a bare clone (its header says so).
+  "exclude": ["examples/testnet-roundtrip.ts"]
+}

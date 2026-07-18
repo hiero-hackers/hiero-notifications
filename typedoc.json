@@ -1,0 +1,13 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs-api",
+  "sourceLinkTemplate": "https://github.com/hiero-hackers/hiero-notifications/blob/main/{path}#L{line}",
+  "includeVersion": true,
+  "excludeInternal": true,
+  "readme": "README.md",
+  "navigationLinks": {
+    "GitHub": "https://github.com/hiero-hackers/hiero-notifications"
+  },
+  "treatWarningsAsErrors": true
+}

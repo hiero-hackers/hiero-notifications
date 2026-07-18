@@ -6,6 +6,7 @@ coverage/
 # secrets — never commit
 .env
 .env.*
+!.env.example
 
 # macOS
 .DS_Store
@@ -15,3 +16,7 @@ coverage/
 
 # your real config (may hold webhook URLs)
 notify.config.json
+docs-api/
+
+# watch cursor state
+*.state.json
