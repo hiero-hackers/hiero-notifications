@@ -61,15 +61,15 @@
     "example:roundtrip": "node --env-file-if-exists=.env examples/testnet-roundtrip.ts"
   },
   "dependencies": {
-    "@hiero-hackers/enterprise-mirror": "^0.1.0",
-    "@hiero-hackers/hiero-receipts": "^0.1.0"
+    "@hiero-hackers/enterprise-mirror": "^0.3.0",
+    "@hiero-hackers/hiero-receipts": "^0.2.2"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@eslint/js": "^10.0.1",
-    "@hiero-hackers/enterprise-core": "^0.1.0",
+    "@hiero-hackers/enterprise-core": "^0.3.0",
     "@types/node": "^26.1.2",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^5.0.2",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
@@ -80,6 +80,6 @@
     "typedoc": "^0.28.20",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.65.0",
-    "vitest": "^4.0.0"
+    "vitest": "^5.0.2"
   }
 }
